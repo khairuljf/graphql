@@ -1,5 +1,6 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
+import axios from 'axios';
 
 
 import db from './_db.js'
@@ -11,6 +12,32 @@ import {typeDefs } from './schema.js'
 
 const resolvers = {
     Query:{
+
+        animes: async (parent, {id}) => {
+            const response = await axios.get(`https://api.jikan.moe/v4/anime`)
+            const animeData = response.data.data;
+            return animeData
+        },
+        
+        anime: async (parent, {id}) => {
+            const response = await axios.get(`https://api.jikan.moe/v4/anime/${id}/full`)
+            const animeData = response.data.data;
+
+            const genres = animeData.genres.map((genre) => ({
+                mal_id: genre.mal_id,
+                name: genre.name
+            }))
+
+            return {
+                mal_id: animeData.mal_id,
+                title: animeData.title,
+                images: animeData.images,
+                episodes: animeData.episodes,
+                synopsis: animeData.synopsis,
+                genres: genres,
+            }
+        },
+
         games(){
             return db.games
         },
@@ -78,7 +105,7 @@ const server = new ApolloServer({
   //  2. installs your ApolloServer instance as middleware
   //  3. prepares your app to handle incoming requests
   const { url } = await startStandaloneServer(server, {
-    listen: { port: 4000 },
+    listen: { port: 8000 },
   });
   
   console.log(`🚀  Server ready at: ${url}`);
